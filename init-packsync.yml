@@ -1,0 +1,15 @@
+---
+#Detect if file changes have occurred outside the upload folder. This means an update or new module has been installed and a new wordpress package needs to be distributed S3 bucket and to other ec2 hosts
+#All of these tasks will be run locally
+- hosts: localwebstack
+  vars:
+    region: ap-southeast-2
+  tasks:
+  - name: "Detect File Changes" #We need to use a shell script here to find changes excluding the uploads directory
+    shell: "find /opt/wordpress/ -mmin -5 -type f | grep -v /uploads | wc -l"
+    register: found_files
+  - name: "Terminate if No Changes Found"
+    fail:
+      msg: "No Changes Found"
+    when: found_files.stdout == "0"
+- include: "cont-packsync.yml"

@@ -1,0 +1,29 @@
+#Continuing from init-packsync.yml once file changes have been detected. Create and upload new package to s3 and distribute new package to other hosts
+#All of these tasks will be run locally
+- hosts: localwebstack
+  vars:
+    region: ap-southeast-2
+  tasks:
+  - name: "Change Found - Extract for new Package" #Facing issues with archive utility excluding directories so using shell commands to perform the archiving tasks
+    command: "rsync -av --progress /opt/wordpress/ {{ playbook_dir }}/wordpress --exclude uploads"
+  - name: "Change Found - Create Package"
+    command: "tar -czvf {{ playbook_dir }}/wordpress-latest.tar.gz {{ playbook_dir }}/wordpress"
+  - name: "Change Found - Upload Package to S3" #Ansible S3 module is spitting a 403 error dispite a successful upload. Possible permission issue but can't find an acceptable resolution without granting excessive access. Sticking to aws cli for now
+    command: aws s3 cp wordpress-latest.tar.gz s3://mywordpresssite-utilities/resources/wordpress-latest.tar.gz --sse #Need to determine how I will pass s3 name dynamically
+  - name: "Change Found - Get Other Instances"
+    ec2_remote_facts:
+      region: "{{ region }}"
+      filters:
+        "tag:Name": mywordpresssite-asg-webstack
+    register: wordpress_stack
+  - name: "Change Found - Add Other Instances to Inventory"
+    add_host:
+      name: "{{ item.private_dns_name }}"
+      group: "otherwebstack"
+    with_items: "{{ wordpress_stack.instances }}"
+- hosts: otherwebstack
+  vars:
+    region: ap-southeast-2
+  tasks:
+  - name: Lets Ping
+    ping:
