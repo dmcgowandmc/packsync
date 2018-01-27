@@ -12,4 +12,7 @@
     fail:
       msg: "No Changes Found"
     when: found_files.stdout == "0"
+  - name: "Pause 60 seconds to allow for updates to complete"
+    pause:
+      seconds: 60
 - include: "cont-packsync.yml"
