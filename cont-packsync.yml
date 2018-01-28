@@ -9,6 +9,9 @@
   - name: "Change Found - Upload Package to S3" #Ansible S3 module is spitting a 403 error dispite a successful upload. Possible permission issue but can't find an acceptable resolution without granting excessive access. Sticking to aws cli for now
     command: "aws s3 sync {{ playbook_dir }}/{{ mywordpresssite_db_wp_name }} s3://{{ mywordpresssite_s3_utilities }}/resources/{{ mywordpresssite_db_wp_name }} --sse"
     ignore_errors: true #WARNING : This version of awscli seems to be throwing errors on come file uploads however they appear to be getting uploaded correctly. Ignoring errors for now
+  - name: "Pause 10 seconds incase another hosts is also updating s3"
+    pause:
+      seconds: 10
   - name: "Change Found - Get this instance ID"
     command: "curl http://169.254.169.254/latest/meta-data/instance-id/"
     register: instance_id
@@ -38,6 +41,6 @@
   - name: Lets Ping
     ping:
   - name: "Wordpress Config - Download Local Wordpress" #Difficulty getting recursive to work on a folder with the s3 module so using aws cli for now
-    command: "aws s3 cp s3://{{ mywordpresssite_s3_utilities }}/resources/{{ mywordpresssite_db_wp_name }}/ /opt/wordpress --recursive"
+    command: "aws s3 sync s3://{{ mywordpresssite_s3_utilities }}/resources/{{ mywordpresssite_db_wp_name }}/ /opt/wordpress"
   - name: "Wordpress Config - Set Permission" #NOTE: THIS COMMAND IS REQUIRED DUE TO LIMITATION MENTIONED ABOVE
     command: "chown -R www-data:www-data /opt/wordpress"
