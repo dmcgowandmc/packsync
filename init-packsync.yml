@@ -5,8 +5,8 @@
   vars:
     region: ap-southeast-2
   tasks:
-  - name: "Detect File Changes" #We need to use a shell script here to find changes excluding the uploads directory
-    shell: "find /opt/wordpress/ -mmin -5 -type f | grep -v /uploads | wc -l"
+  - name: "Detect File Changes" #We need to use a shell script here to find changes excluding the uploads and cache directory
+    shell: "find /opt/wordpress/ -mmin -5 -type f | grep -v /uploads | grep -v /cache | wc -l"
     register: found_files
   - name: "Terminate if No Changes Found"
     fail:
